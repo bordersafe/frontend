@@ -87,6 +87,10 @@ function buildHeaders(
     }
   }
 
+  if (options.authToken && !headers.Authorization) {
+    headers.Authorization = `Bearer ${options.authToken}`;
+  }
+
   return headers;
 }
 

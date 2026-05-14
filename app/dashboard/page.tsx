@@ -1,30 +1,31 @@
 "use client";
 
+import { motion } from "framer-motion";
+import Image from "next/image";
 import Link from "next/link";
+import { type ReactElement } from "react";
+import useSWR from "swr";
+
+import { normalizeApiError } from "@/lib/api";
+import { useAuthedApi } from "@/lib/api/auth-client";
+import type { UiError } from "@/lib/api";
 type IconProps = { className?: string };
-type IconComponent = (props: IconProps) => JSX.Element;
+type IconComponent = (props: IconProps) => ReactElement;
 
-const IconGrid: IconComponent = ({ className = "h-5 w-5" }) => (
-  <svg aria-hidden="true" className={className} fill="none" viewBox="0 0 24 24">
-    <path
-      d="M4 4h7v7H4V4Zm9 0h7v7h-7V4Zm-9 9h7v7H4v-7Zm9 0h7v7h-7v-7Z"
-      stroke="currentColor"
-      strokeWidth="1.6"
-    />
-  </svg>
-);
+type EscrowItem = {
+  id: string;
+  amount: number;
+  currency: string;
+  buyer_email: string;
+  status: string;
+  description: string | null;
+  updated_at: string | null;
+};
 
-const IconLock: IconComponent = ({ className = "h-5 w-5" }) => (
-  <svg aria-hidden="true" className={className} fill="none" viewBox="0 0 24 24">
-    <path
-      d="M7 10V7a5 5 0 0 1 10 0v3"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-    />
-    <rect x="5" y="10" width="14" height="10" rx="2.4" stroke="currentColor" strokeWidth="1.6" />
-  </svg>
-);
+type EscrowListResponse = {
+  count: number;
+  items: EscrowItem[];
+};
 
 const IconEye: IconComponent = ({ className = "h-5 w-5" }) => (
   <svg aria-hidden="true" className={className} fill="none" viewBox="0 0 24 24">
@@ -61,22 +62,6 @@ const IconShield: IconComponent = ({ className = "h-5 w-5" }) => (
   </svg>
 );
 
-const IconSettings: IconComponent = ({ className = "h-5 w-5" }) => (
-  <svg aria-hidden="true" className={className} fill="none" viewBox="0 0 24 24">
-    <path
-      d="M12 8.4a3.6 3.6 0 1 1 0 7.2 3.6 3.6 0 0 1 0-7.2Z"
-      stroke="currentColor"
-      strokeWidth="1.6"
-    />
-    <path
-      d="m4.9 9.2 1-1.8-1-1.8 2-2 1.8 1 1.8-1h2.8l1.8 1 1.8-1 2 2-1 1.8 1 1.8v2.8l-1 1.8 1 1.8-2 2-1.8-1-1.8 1h-2.8l-1.8-1-1.8 1-2-2 1-1.8-1-1.8v-2.8Z"
-      stroke="currentColor"
-      strokeWidth="1.2"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
 const IconPulse: IconComponent = ({ className = "h-5 w-5" }) => (
   <svg aria-hidden="true" className={className} fill="none" viewBox="0 0 24 24">
     <path
@@ -89,143 +74,6 @@ const IconPulse: IconComponent = ({ className = "h-5 w-5" }) => (
   </svg>
 );
 
-const IconBell: IconComponent = ({ className = "h-5 w-5" }) => (
-  <svg aria-hidden="true" className={className} fill="none" viewBox="0 0 24 24">
-    <path
-      d="M6 9a6 6 0 1 1 12 0c0 5 2 5 2 7H4c0-2 2-2 2-7Z"
-      stroke="currentColor"
-      strokeWidth="1.6"
-    />
-    <path d="M10 18a2 2 0 0 0 4 0" stroke="currentColor" strokeWidth="1.6" />
-  </svg>
-);
-
-const IconSpark: IconComponent = ({ className = "h-5 w-5" }) => (
-  <svg aria-hidden="true" className={className} fill="none" viewBox="0 0 24 24">
-    <path d="m12 3 2.2 5.8L20 11l-5.8 2.2L12 19l-2.2-5.8L4 11l5.8-2.2L12 3Z" stroke="currentColor" strokeWidth="1.6" />
-  </svg>
-);
-
-const IconSearch: IconComponent = ({ className = "h-5 w-5" }) => (
-  <svg aria-hidden="true" className={className} fill="none" viewBox="0 0 24 24">
-    <circle cx="11" cy="11" r="6" stroke="currentColor" strokeWidth="1.6" />
-    <path d="m16 16 5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-  </svg>
-);
-
-const NAV_LINKS: Array<{ label: string; href: string; Icon: IconComponent }> = [
-  { label: "Overview", href: "/dashboard", Icon: IconGrid },
-  { label: "Escrows", href: "/escrow/new", Icon: IconLock },
-  { label: "Reviews", href: "/escrow/2045", Icon: IconEye },
-  { label: "Wallet", href: "/wallet", Icon: IconWallet },
-  { label: "Compliance", href: "/dashboard", Icon: IconShield },
-  { label: "Settings", href: "/dashboard", Icon: IconSettings },
-];
-
-const SUMMARY: Array<{ label: string; value: string; trend: string; Icon: IconComponent }> = [
-  { label: "Active escrows", value: "142", trend: "+8 today", Icon: IconPulse },
-  { label: "Awaiting verification", value: "18", trend: "3 due in 2 hrs", Icon: IconEye },
-  { label: "Human review", value: "6", trend: "2 high priority", Icon: IconShield },
-  { label: "Released today", value: "$84,230", trend: "+12.6% WoW", Icon: IconWallet },
-];
-
-const ACTIVE_ESCROWS = [
-  {
-    id: "ESC-2043",
-    buyer: "Ada Okoye",
-    seller: "Lagos Textile Co.",
-    amount: "$1,240",
-    corridor: "NGN to USD",
-    status: "IN_TRANSIT",
-    risk: "Low",
-    updated: "12m ago",
-    href: "/escrow/2043",
-  },
-  {
-    id: "ESC-2044",
-    buyer: "Kofi Mensah",
-    seller: "Accra Gadgets Ltd.",
-    amount: "$3,820",
-    corridor: "GHS to USD",
-    status: "VERIFYING",
-    risk: "Medium",
-    updated: "28m ago",
-    href: "/escrow/2044",
-  },
-  {
-    id: "ESC-2045",
-    buyer: "Zuri Housewares",
-    seller: "Nairobi Auto Parts",
-    amount: "$6,410",
-    corridor: "KES to USD",
-    status: "AWAITING_HUMAN_REVIEW",
-    risk: "High",
-    updated: "52m ago",
-    href: "/escrow/2045",
-  },
-  {
-    id: "ESC-2046",
-    buyer: "Maputo Imports",
-    seller: "Johannesburg Furnishings",
-    amount: "$2,960",
-    corridor: "ZAR to USD",
-    status: "FUNDS_LOCKED",
-    risk: "Low",
-    updated: "1h ago",
-    href: "/escrow/2046",
-  },
-  {
-    id: "ESC-2047",
-    buyer: "Abuja Retail Collective",
-    seller: "Cairo Electronics",
-    amount: "$4,120",
-    corridor: "NGN to EGP",
-    status: "AWAITING_PAYMENT",
-    risk: "Medium",
-    updated: "2h ago",
-    href: "/escrow/2047",
-  },
-];
-
-const REVIEW_QUEUE = [
-  {
-    id: "ESC-2029",
-    seller: "Kigali Fashion House",
-    reason: "Image mismatch on branding",
-    confidence: "78%",
-    updated: "35m ago",
-    href: "/escrow/2029",
-  },
-  {
-    id: "ESC-2032",
-    seller: "Durban Auto Spares",
-    reason: "Delivery scan failed",
-    confidence: "65%",
-    updated: "1h ago",
-    href: "/escrow/2032",
-  },
-  {
-    id: "ESC-2036",
-    seller: "Lusaka Phone Traders",
-    reason: "Missing delivery photo",
-    confidence: "71%",
-    updated: "2h ago",
-    href: "/escrow/2036",
-  },
-];
-
-const PAYOUTS = [
-  { id: "PAYOUT-8891", beneficiary: "Lagos Textile Co.", amount: "$1,240", status: "COMPLETED", time: "10:24 AM" },
-  { id: "PAYOUT-8892", beneficiary: "Accra Gadgets Ltd.", amount: "$3,820", status: "PENDING", time: "09:58 AM" },
-  { id: "PAYOUT-8893", beneficiary: "Johannesburg Furnishings", amount: "$2,960", status: "COMPLETED", time: "Yesterday" },
-];
-
-const ACTIVITY = [
-  { label: "Waybill verified", meta: "ESC-2043 · DHL NG", time: "12m ago" },
-  { label: "Dispute escalated", meta: "ESC-2045 · 78% match signal", time: "52m ago" },
-  { label: "Funds locked", meta: "ESC-2046 · payment confirmation", time: "1h ago" },
-];
-
 const STATUS_STYLES: Record<string, string> = {
   AWAITING_PAYMENT: "bg-white/80 text-(--ink-muted) border border-(--border-soft)",
   FUNDS_LOCKED: "bg-(--action) text-(--action-ink)",
@@ -234,165 +82,47 @@ const STATUS_STYLES: Record<string, string> = {
   AWAITING_HUMAN_REVIEW: "bg-(--accent-positive)/20 text-(--accent-positive-ink)",
 };
 
-const RISK_STYLES: Record<string, string> = {
-  Low: "bg-(--accent-positive)/20 text-(--accent-positive-ink)",
-  Medium: "bg-(--surface-alt) text-(--ink-muted)",
-  High: "bg-(--action) text-(--action-ink)",
+const LIST_VARIANTS = {
+  hidden: { opacity: 1 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.06 } },
 };
 
-const PAYOUT_STYLES: Record<string, string> = {
-  COMPLETED: "bg-(--accent-positive)/20 text-(--accent-positive-ink)",
-  PENDING: "bg-(--surface-alt) text-(--ink-muted)",
+const ITEM_VARIANTS = {
+  hidden: { opacity: 0, y: 12 },
+  visible: { opacity: 1, y: 0 },
 };
 
 export default function DashboardPage() {
+  const { user, profile, isAuthLoading, get } = useAuthedApi();
+  const isAdmin = profile?.roles?.includes("admin") || profile?.roles?.includes("hitl");
+  const isSeller = profile?.roles?.includes("vendor");
+  const {
+    data: escrowData,
+    error: escrowFetchError,
+    isLoading: isEscrowLoading,
+  } = useSWR<EscrowListResponse>(
+    !isAuthLoading && user ? ["dashboard-escrows", user.uid] : null,
+    async () => get<EscrowListResponse>("/api/escrow?limit=5"),
+    {
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      shouldRetryOnError: false,
+    },
+  );
+
+  const escrows = escrowData?.items ?? [];
+  const escrowError = escrowFetchError ? normalizeApiError(escrowFetchError) : null;
+
   const getStatusStyles = (status: string) => STATUS_STYLES[status] ?? "bg-(--surface-alt) text-(--ink-muted)";
-  const getRiskStyles = (risk: string) => RISK_STYLES[risk] ?? "bg-(--surface-alt) text-(--ink-muted)";
-  const getPayoutStyles = (status: string) => PAYOUT_STYLES[status] ?? "bg-(--surface-alt) text-(--ink-muted)";
+  const escrowAmountTotal = escrows.reduce((sum, escrow) => sum + escrow.amount, 0);
+  const lockedEscrowCount = escrows.filter((escrow) => escrow.status === "FUNDS_LOCKED").length;
+  const awaitingPaymentCount = escrows.filter((escrow) => escrow.status === "AWAITING_PAYMENT").length;
+  const verifyingCount = escrows.filter((escrow) => escrow.status === "VERIFYING").length;
+  const humanReviewCount = escrows.filter((escrow) => escrow.status === "AWAITING_HUMAN_REVIEW").length;
 
   return (
-    <main className="min-h-full">
-      <div className="relative min-h-full">
-        <aside className="hidden h-dvh w-[300px] flex-col border-r border-white/10 section-emerald text-(--action-ink) shadow-(--shell-shadow) lg:fixed lg:inset-y-0 lg:left-0 lg:flex">
-          <div className="border-b border-white/10 px-6 pb-6 pt-7">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-xs font-semibold uppercase tracking-[0.24em] text-(--action-ink)">
-                BS
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-(--action-ink)">BorderSafe</p>
-                <p className="text-xs text-(--action-ink-dim)">Operations studio</p>
-              </div>
-            </div>
-            <div className="mt-5 flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-(--action-ink-dim)">
-              <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1">Morning</span>
-              <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1">13 corridors</span>
-            </div>
-          </div>
-
-          <nav className="flex-1 px-6 py-6">
-            <p className="px-2 text-xs uppercase tracking-[0.22em] text-(--action-ink-dim)">Navigation</p>
-            <div className="mt-4 space-y-1">
-              {NAV_LINKS.map((item) => {
-                const isActive = item.label === "Overview";
-                return (
-                  <Link
-                    key={item.label}
-                    className={`group relative flex items-center gap-3 rounded-2xl px-4 py-2.5 text-sm font-medium text-(--action-ink-dim) transition hover:bg-white/10 hover:text-(--action-ink) ${
-                      isActive ? "bg-white/15 text-(--action-ink)" : ""
-                    }`}
-                    href={item.href}
-                  >
-                    <span
-                      className={`absolute left-2 top-1/2 h-6 w-1 -translate-y-1/2 rounded-full ${
-                        isActive ? "bg-(--accent-positive)" : "bg-transparent"
-                      }`}
-                    />
-                    <span
-                      className={`flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-(--action-ink-dim) transition group-hover:text-(--action-ink) ${
-                        isActive ? "bg-white/20 text-(--action-ink)" : ""
-                      }`}
-                    >
-                      <item.Icon className="h-4 w-4" />
-                    </span>
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          </nav>
-
-          <div className="px-6 pb-6">
-            <div className="rounded-[22px] border border-white/15 bg-white/10 p-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-(--action-ink)">
-                  AO
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-(--action-ink)">Ada Okoye</p>
-                  <p className="text-xs text-(--action-ink-dim)">Risk Ops Lead</p>
-                </div>
-              </div>
-              <div className="mt-4 flex items-center justify-between rounded-2xl bg-white/15 px-3 py-2 text-xs text-(--action-ink)">
-                <span className="uppercase tracking-[0.2em] text-(--action-ink-dim)">Shift</span>
-                <span>08:00-14:00</span>
-              </div>
-            </div>
-          </div>
-        </aside>
-
-        <div className="min-h-full lg:pl-[300px]">
-          <header className="sticky top-0 z-20 px-4 py-4 sm:px-8 lg:px-12">
-            <div className="relative overflow-hidden rounded-[28px] border border-white/70 bg-white/80 p-4 shadow-(--card-shadow) backdrop-blur">
-              <div className="absolute inset-0 section-mist" />
-              <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
-                <div className="flex flex-wrap items-center gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-(--action) text-(--action-ink)">
-                    <IconPulse className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.24em] text-(--ink-soft)">Ops pulse</p>
-                    <p className="text-sm font-semibold text-foreground">May 11, 2026</p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-(--ink-soft)">
-                    <span className="rounded-full border border-white/70 bg-white/85 px-3 py-1">Live view</span>
-                    <span className="rounded-full border border-white/70 bg-white/85 px-3 py-1">24 escalations</span>
-                  </div>
-                </div>
-
-                <div className="flex flex-1 items-center gap-3 sm:max-w-[420px]">
-                  <div className="relative w-full">
-                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-(--ink-soft)">
-                      <IconSearch className="h-4 w-4" />
-                    </span>
-                    <input
-                      className="w-full rounded-full border border-white/70 bg-white/85 py-2 pl-9 pr-4 text-sm text-foreground outline-none"
-                      placeholder="Search escrows, buyers, sellers"
-                      type="search"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-white/85 text-(--ink-muted)"
-                    type="button"
-                    aria-label="Notifications"
-                  >
-                    <IconBell className="h-4 w-4" />
-                  </button>
-                  <button
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-white/85 text-(--ink-muted)"
-                    type="button"
-                    aria-label="Insights"
-                  >
-                    <IconSpark className="h-4 w-4" />
-                  </button>
-                  <Link
-                    className="rounded-full bg-(--action) px-4 py-2 text-xs font-semibold text-(--action-ink)"
-                    href="/escrow/new"
-                  >
-                    New escrow
-                  </Link>
-                </div>
-              </div>
-
-              <div className="relative z-10 mt-4 flex flex-wrap gap-2 lg:hidden">
-                {NAV_LINKS.slice(0, 4).map((item) => (
-                  <Link
-                    key={item.label}
-                    className="flex items-center gap-2 rounded-full border border-white/70 bg-white/85 px-3 py-2 text-xs font-semibold text-(--ink-muted)"
-                    href={item.href}
-                  >
-                    <item.Icon className="h-3.5 w-3.5" />
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </header>
-
-          <div className="flex flex-col gap-8 px-4 py-8 sm:px-8 lg:px-12">
+    <main className="flex flex-col gap-8">
+      <div className="flex flex-col gap-8">
             <section className="relative overflow-hidden rounded-[36px] border border-white/70 bg-white/70 p-7 shadow-(--shell-shadow)">
               <div className="absolute inset-0 section-bridge" />
               <div className="absolute inset-0 bg-gradient-to-br from-white/85 via-white/55 to-white/15" />
@@ -400,9 +130,15 @@ export default function DashboardPage() {
                 <div className="space-y-6">
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
-                      <h1 className="display-serif text-3xl text-foreground sm:text-4xl">Operations center</h1>
-                      <p className="mt-3 max-w-[46ch] text-sm leading-6 text-(--ink-muted)">
-                        Real-time oversight of escrow states, dispute risk, and payout performance across corridors.
+                      <h1 className="heading-1">
+                          {isAdmin ? "Operations center" : isSeller ? "Seller dashboard" : "Buyer dashboard"}
+                      </h1>
+                      <p className="subheading mt-3 max-w-[50ch]">
+                        {isAdmin
+                          ? "Monitor escrow performance, resolve disputes, and track payout processing."
+                          : isSeller
+                            ? "Create escrows, issue Squad virtual accounts, and track payout readiness."
+                          : "Track your purchases, manage disputes, and view transaction history."}
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -421,146 +157,319 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    {SUMMARY.map((item) => (
-                      <div key={item.label} className="rounded-2xl border border-white/70 bg-white/85 p-4">
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs uppercase tracking-[0.2em] text-(--ink-soft)">{item.label}</p>
-                          <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/70 bg-white/80 text-(--ink-muted)">
-                            <item.Icon className="h-4 w-4" />
-                          </span>
-                        </div>
-                        <p className="mt-2 text-2xl font-semibold text-foreground">{item.value}</p>
-                        <p className="mt-2 text-xs text-(--ink-muted)">{item.trend}</p>
-                      </div>
-                    ))}
-                  </div>
+                  <motion.div
+                    className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+                    initial="hidden"
+                    animate="visible"
+                    variants={LIST_VARIANTS}
+                  >
+                    {isAdmin ? (
+                      <>
+                        <motion.div
+                          className="rounded-2xl border border-white/70 bg-white/85 p-4"
+                          variants={ITEM_VARIANTS}
+                          transition={{ duration: 0.4, ease: "easeOut" }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs uppercase tracking-[0.2em] text-(--ink-soft)">Active escrows</p>
+                            <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/70 bg-white/80 text-(--ink-muted)">
+                              <IconPulse className="h-4 w-4" />
+                            </span>
+                          </div>
+                          <p className="mt-2 text-xl font-semibold text-foreground">{escrows.length}</p>
+                          <p className="mt-2 text-xs text-(--ink-muted)">Live from the current escrow feed</p>
+                        </motion.div>
+                        <motion.div
+                          className="rounded-2xl border border-white/70 bg-white/85 p-4"
+                          variants={ITEM_VARIANTS}
+                          transition={{ duration: 0.4, ease: "easeOut" }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs uppercase tracking-[0.2em] text-(--ink-soft)">Awaiting verification</p>
+                            <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/70 bg-white/80 text-(--ink-muted)">
+                              <IconEye className="h-4 w-4" />
+                            </span>
+                          </div>
+                          <p className="mt-2 text-xl font-semibold text-foreground">{awaitingPaymentCount + verifyingCount}</p>
+                          <p className="mt-2 text-xs text-(--ink-muted)">Awaiting payment or verification</p>
+                        </motion.div>
+                        <motion.div
+                          className="rounded-2xl border border-white/70 bg-white/85 p-4"
+                          variants={ITEM_VARIANTS}
+                          transition={{ duration: 0.4, ease: "easeOut" }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs uppercase tracking-[0.2em] text-(--ink-soft)">Under review</p>
+                            <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/70 bg-white/80 text-(--ink-muted)">
+                              <IconShield className="h-4 w-4" />
+                            </span>
+                          </div>
+                          <p className="mt-2 text-xl font-semibold text-foreground">{humanReviewCount}</p>
+                          <p className="mt-2 text-xs text-(--ink-muted)">Queued for human review</p>
+                        </motion.div>
+                        <motion.div
+                          className="rounded-2xl border border-white/70 bg-white/85 p-4"
+                          variants={ITEM_VARIANTS}
+                          transition={{ duration: 0.4, ease: "easeOut" }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs uppercase tracking-[0.2em] text-(--ink-soft)">Released this week</p>
+                            <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/70 bg-white/80 text-(--ink-muted)">
+                              <IconWallet className="h-4 w-4" />
+                            </span>
+                          </div>
+                          <p className="mt-2 text-xl font-semibold text-foreground">{lockedEscrowCount}</p>
+                          <p className="mt-2 text-xs text-(--ink-muted)">Locked in settlement</p>
+                        </motion.div>
+                      </>
+                    ) : (
+                      <>
+                        <motion.div
+                          className="rounded-2xl border border-white/70 bg-white/85 p-4"
+                          variants={ITEM_VARIANTS}
+                          transition={{ duration: 0.4, ease: "easeOut" }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs uppercase tracking-[0.2em] text-(--ink-soft)">Total escrows</p>
+                            <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/70 bg-white/80 text-(--ink-muted)">
+                              <IconPulse className="h-4 w-4" />
+                            </span>
+                          </div>
+                          <p className="mt-2 text-xl font-semibold text-foreground">{escrows.length}</p>
+                          <p className="mt-2 text-xs text-(--ink-muted)">Fetched from your live dashboard feed</p>
+                        </motion.div>
+                        <motion.div
+                          className="rounded-2xl border border-white/70 bg-white/85 p-4"
+                          variants={ITEM_VARIANTS}
+                          transition={{ duration: 0.4, ease: "easeOut" }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs uppercase tracking-[0.2em] text-(--ink-soft)">Escrow value</p>
+                            <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/70 bg-white/80 text-(--ink-muted)">
+                              <IconWallet className="h-4 w-4" />
+                            </span>
+                          </div>
+                          <p className="mt-2 text-xl font-semibold text-foreground">{escrowAmountTotal.toLocaleString()}</p>
+                          <p className="mt-2 text-xs text-(--ink-muted)">Live escrow value</p>
+                        </motion.div>
+                        <motion.div
+                          className="rounded-2xl border border-white/70 bg-white/85 p-4"
+                          variants={ITEM_VARIANTS}
+                          transition={{ duration: 0.4, ease: "easeOut" }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs uppercase tracking-[0.2em] text-(--ink-soft)">Completion rate</p>
+                            <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/70 bg-white/80 text-(--ink-muted)">
+                              <IconEye className="h-4 w-4" />
+                            </span>
+                          </div>
+                          <p className="mt-2 text-xl font-semibold text-foreground">{escrows.length ? Math.round(((escrows.length - awaitingPaymentCount - humanReviewCount) / escrows.length) * 100) : 0}%</p>
+                          <p className="mt-2 text-xs text-(--ink-muted)">Derived from current escrow states</p>
+                        </motion.div>
+                        <motion.div
+                          className="rounded-2xl border border-white/70 bg-white/85 p-4"
+                          variants={ITEM_VARIANTS}
+                          transition={{ duration: 0.4, ease: "easeOut" }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs uppercase tracking-[0.2em] text-(--ink-soft)">In progress</p>
+                            <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/70 bg-white/80 text-(--ink-muted)">
+                              <IconShield className="h-4 w-4" />
+                            </span>
+                          </div>
+                          <p className="mt-2 text-xl font-semibold text-foreground">{Math.max(escrows.length - lockedEscrowCount, 0)}</p>
+                          <p className="mt-2 text-xs text-(--ink-muted)">Still moving through the flow</p>
+                        </motion.div>
+                      </>
+                    )}
+                  </motion.div>
                 </div>
 
                 <div className="grid gap-4">
-                  <div className="relative rounded-[30px] border border-white/70 bg-white/85 p-4 shadow-(--card-shadow) backdrop-blur">
-                    <img
-                      alt="Wallet preview"
-                      className="w-full rounded-[24px] object-cover"
-                      src="/images/5f26813372e8df83a35831389b757450.jpg"
-                    />
-                    <div className="absolute left-4 top-4 rounded-full bg-(--action) px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-(--action-ink) float-slow">
-                      Live
-                    </div>
-                    <div className="absolute -left-6 bottom-6 rounded-full border border-white/70 bg-white/95 px-3 py-2 text-xs font-semibold text-(--ink-muted) shadow-(--card-shadow) float-slower">
-                      Escrow watch
-                    </div>
-                    <div className="absolute right-4 top-6 rounded-full border border-white/70 bg-white/95 px-3 py-2 text-xs font-semibold text-(--ink-muted) shadow-(--card-shadow) float-slow">
-                      Settlement window 12m
-                    </div>
-                  </div>
+                  {isAdmin && (
+                    <>
+                      <div className="relative rounded-[30px] border border-white/70 bg-white/85 p-4 shadow-(--card-shadow) backdrop-blur">
+                        <Image
+                          alt="Wallet preview"
+                          className="w-full rounded-[24px] object-cover"
+                          src="/images/5f26813372e8df83a35831389b757450.jpg"
+                          width={720}
+                          height={480}
+                          sizes="(max-width: 1024px) 100vw, 420px"
+                        />
+                        <div className="absolute left-4 top-4 rounded-full bg-(--action) px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-(--action-ink) float-slow">
+                          Live
+                        </div>
+                        <div className="absolute -left-6 bottom-6 rounded-full border border-white/70 bg-white/95 px-3 py-2 text-xs font-semibold text-(--ink-muted) shadow-(--card-shadow) float-slower">
+                          Escrow watch
+                        </div>
+                        <div className="absolute right-4 top-6 rounded-full border border-white/70 bg-white/95 px-3 py-2 text-xs font-semibold text-(--ink-muted) shadow-(--card-shadow) float-slow">
+                          Settlement window 12m
+                        </div>
+                      </div>
 
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-[22px] border border-white/70 bg-white/85 p-4 text-sm text-(--ink-muted)">
-                      <p className="text-xs uppercase tracking-[0.2em] text-(--ink-soft)">Priority corridor</p>
-                      <p className="mt-2 text-lg font-semibold text-foreground">NGN → USD</p>
-                      <p className="mt-1 text-xs text-(--ink-soft)">Verification queue 14</p>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="rounded-[22px] border border-white/70 bg-white/85 p-4 text-sm text-(--ink-muted)">
+                          <p className="text-xs uppercase tracking-[0.2em] text-(--ink-soft)">Priority corridor</p>
+                          <p className="mt-2 text-base font-semibold text-foreground">Live escrow summary</p>
+                          <p className="mt-1 text-xs text-(--ink-soft)">Current feed status across your recent escrows</p>
+                        </div>
+                        <div className="rounded-[22px] bg-(--action) p-4 text-sm text-(--action-ink)">
+                          <p className="text-xs uppercase tracking-[0.2em] text-(--action-ink-dim)">Next release</p>
+                          <p className="mt-2 text-base font-semibold">$28,420</p>
+                          <p className="mt-1 text-xs text-(--action-ink-dim)">Latest feed activity</p>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {!isAdmin && (
+                    <div className="grid gap-3">
+                      <div className="rounded-[22px] border border-white/70 bg-white/85 p-4 text-sm">
+                        <p className="text-xs uppercase tracking-[0.2em] text-(--ink-soft)">Your status</p>
+                        <p className="mt-2 text-base font-semibold text-foreground">
+                          {isSeller ? "Seller account" : "Buyer account"}
+                        </p>
+                        <p className="mt-1 text-xs text-(--ink-muted)">Verified and active</p>
+                      </div>
+                      <div className="rounded-[22px] bg-(--accent-fog) p-4 text-sm">
+                        <p className="text-xs uppercase tracking-[0.2em] text-(--ink-soft)">Next payout</p>
+                        <p className="mt-2 text-base font-semibold text-foreground">$2,350.00</p>
+                        <p className="mt-1 text-xs text-(--ink-soft)">Processing in 2 days</p>
+                      </div>
                     </div>
-                    <div className="rounded-[22px] bg-(--action) p-4 text-sm text-(--action-ink)">
-                      <p className="text-xs uppercase tracking-[0.2em] text-(--action-ink-dim)">Next release</p>
-                      <p className="mt-2 text-lg font-semibold">$28,420</p>
-                      <p className="mt-1 text-xs text-(--action-ink-dim)">Scheduled in 18m</p>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </section>
 
             <section className="grid gap-6 lg:grid-cols-[1.4fr_0.6fr]">
-              <div className="relative overflow-hidden rounded-[32px] border border-white/70 bg-white/75 p-6 shadow-(--card-shadow)">
-                <div className="absolute inset-0 section-mist" />
-                <div className="relative z-10">
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div>
-                      <h2 className="text-xl font-semibold text-foreground">Escrow volume</h2>
-                      <p className="mt-1 text-sm text-(--ink-muted)">30-day transaction flow across corridors.</p>
+              {isAdmin && (
+                <div className="relative overflow-hidden rounded-[32px] border border-white/70 bg-white/75 p-6 shadow-(--card-shadow)">
+                  <div className="absolute inset-0 section-mist" />
+                  <div className="relative z-10">
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                      <div>
+                        <h2 className="heading-2">Escrow volume</h2>
+                        <p className="mt-2 text-sm text-(--ink-muted)">30-day transaction flow across all corridors.</p>
+                      </div>
+                      <div className="text-xs text-(--ink-soft)">
+                        <p>30 days · All corridors</p>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-(--ink-soft)">
-                      <span className="rounded-full border border-white/70 bg-white/80 px-3 py-1">30 days</span>
-                      <span className="rounded-full border border-white/70 bg-white/80 px-3 py-1">All corridors</span>
-                    </div>
-                  </div>
-                  <div className="mt-6 rounded-[26px] bg-white/80 p-4">
-                    <svg className="h-40 w-full" viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg">
-                      <defs>
-                        <linearGradient id="volumeGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                          <stop offset="0%" stopColor="#6ea86a" stopOpacity="0.35" />
-                          <stop offset="100%" stopColor="#6ea86a" stopOpacity="0" />
-                        </linearGradient>
-                      </defs>
-                      <path
-                        d="M0,110 C30,90 60,100 90,80 C120,60 150,70 180,55 C210,40 240,60 270,35 C295,18 305,26 320,18 L320,140 L0,140 Z"
-                        fill="url(#volumeGradient)"
-                      />
-                      <path
-                        d="M0,110 C30,90 60,100 90,80 C120,60 150,70 180,55 C210,40 240,60 270,35 C295,18 305,26 320,18"
-                        fill="none"
-                        stroke="#1f2a1f"
-                        strokeWidth="2.5"
-                      />
-                      <circle cx="270" cy="35" r="4" fill="#1f2a1f" />
-                    </svg>
-                    <div className="mt-4 flex flex-wrap items-center justify-between text-sm text-(--ink-muted)">
-                      <span>Peak escrow volume on NGN to USD corridor</span>
-                      <span className="text-(--ink-strong)">$148k</span>
+                    <div className="mt-6 rounded-[26px] bg-white/80 p-4">
+                      <svg className="h-40 w-full" viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                          <linearGradient id="volumeGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stopColor="#6ea86a" stopOpacity="0.35" />
+                            <stop offset="100%" stopColor="#6ea86a" stopOpacity="0" />
+                          </linearGradient>
+                        </defs>
+                        <path
+                          d="M0,110 C30,90 60,100 90,80 C120,60 150,70 180,55 C210,40 240,60 270,35 C295,18 305,26 320,18 L320,140 L0,140 Z"
+                          fill="url(#volumeGradient)"
+                        />
+                        <path
+                          d="M0,110 C30,90 60,100 90,80 C120,60 150,70 180,55 C210,40 240,60 270,35 C295,18 305,26 320,18"
+                          fill="none"
+                          stroke="#1f2a1f"
+                          strokeWidth="2.5"
+                        />
+                        <circle cx="270" cy="35" r="4" fill="#1f2a1f" />
+                      </svg>
+                      <div className="mt-4 flex flex-wrap items-center justify-between text-sm text-(--ink-muted)">
+                        <span>Peak escrow volume on NGN to USD corridor</span>
+                        <span className="text-(--ink-strong)">$148k</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               <div className="grid gap-6">
-                <div className="relative overflow-hidden rounded-[30px] border border-white/70 bg-white/75 p-5 shadow-(--card-shadow)">
-                  <div className="absolute inset-0 section-aurora" />
-                  <div className="relative z-10">
-                    <h3 className="text-lg font-semibold text-foreground">Escrow health</h3>
-                    <p className="mt-1 text-sm text-(--ink-muted)">Risk split by confidence level.</p>
-                    <div className="mt-5 flex items-center gap-4">
-                      <div
-                        className="h-20 w-20 rounded-full"
-                        style={{
-                          background: "conic-gradient(#6ea86a 0 68%, #efe9df 68% 100%)",
-                        }}
-                      />
-                      <div className="space-y-2 text-sm text-(--ink-muted)">
-                        <p>
-                          <span className="font-semibold text-foreground">68%</span> low risk
-                        </p>
-                        <p>
-                          <span className="font-semibold text-foreground">22%</span> medium risk
-                        </p>
-                        <p>
-                          <span className="font-semibold text-foreground">10%</span> high risk
-                        </p>
+                {isAdmin && (
+                  <>
+                    <div className="relative overflow-hidden rounded-[30px] border border-white/70 bg-white/75 p-5 shadow-(--card-shadow)">
+                      <div className="absolute inset-0 section-aurora" />
+                      <div className="relative z-10">
+                        <h3 className="heading-3">Escrow health</h3>
+                        <p className="mt-1 text-sm text-(--ink-muted)">Risk split by confidence level.</p>
+                        <div className="mt-5 flex items-center gap-4">
+                          <div className="risk-ring h-20 w-20 rounded-full" />
+                          <div className="space-y-2 text-sm text-(--ink-muted)">
+                            <p>
+                              <span className="font-semibold text-foreground">68%</span> low risk
+                            </p>
+                            <p>
+                              <span className="font-semibold text-foreground">22%</span> medium risk
+                            </p>
+                            <p>
+                              <span className="font-semibold text-foreground">10%</span> high risk
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
 
-                <div className="relative overflow-hidden rounded-[30px] p-5 text-(--action-ink) shadow-(--card-shadow)">
-                  <div className="absolute inset-0 section-emerald" />
-                  <div className="relative">
-                    <h3 className="text-lg font-semibold">System checks</h3>
-                    <div className="mt-4 space-y-2 text-sm">
-                      <div className="flex items-center justify-between">
-                        <span>Payment confirmations</span>
-                        <span className="text-(--action-ink)">Operational</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>Automated review</span>
-                        <span className="text-(--action-ink)">Stable</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>Payout processing</span>
-                        <span className="text-(--action-ink)">Processing</span>
+                    <div className="relative overflow-hidden rounded-[30px] p-5 text-(--action-ink) shadow-(--card-shadow)">
+                      <div className="absolute inset-0 section-emerald" />
+                      <div className="relative">
+                        <h3 className="heading-3">System checks</h3>
+                        <div className="mt-4 space-y-2 text-sm">
+                          <div className="flex items-center justify-between">
+                            <span>Payment confirmations</span>
+                            <span className="text-(--action-ink)">Operational</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Automated review</span>
+                            <span className="text-(--action-ink)">Stable</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Payout processing</span>
+                            <span className="text-(--action-ink)">Processing</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
+                  </>
+                )}
+
+                {!isAdmin && (
+                  <>
+                    <div className="relative overflow-hidden rounded-[30px] border border-white/70 bg-white/75 p-5 shadow-(--card-shadow)">
+                      <div className="absolute inset-0 section-aurora" />
+                      <div className="relative z-10">
+                        <h3 className="heading-3">Account balance</h3>
+                        <p className="mt-1 text-sm text-(--ink-muted)">Live escrow value from the current feed.</p>
+                        <div className="mt-5">
+                          <p className="text-2xl font-semibold text-foreground">{escrowAmountTotal.toLocaleString()}</p>
+                          <p className="mt-2 text-xs text-(--ink-soft)">Total value in the live escrow feed</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="relative overflow-hidden rounded-[30px] p-5 text-(--action-ink) shadow-(--card-shadow)">
+                      <div className="absolute inset-0 section-emerald" />
+                      <div className="relative">
+                        <h3 className="heading-3">Performance snapshot</h3>
+                        <div className="mt-4 space-y-2 text-sm">
+                          <div className="flex items-center justify-between">
+                            <span>Active escrows</span>
+                            <span className="text-(--action-ink) font-semibold">{escrows.length}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Total escrow value</span>
+                            <span className="text-(--action-ink) font-semibold">{escrowAmountTotal.toLocaleString()}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Completion rate</span>
+                            <span className="text-(--action-ink) font-semibold">{escrows.length ? Math.round(((escrows.length - awaitingPaymentCount - humanReviewCount) / escrows.length) * 100) : 0}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </section>
 
@@ -568,7 +477,7 @@ export default function DashboardPage() {
               <div className="rounded-[32px] border border-white/70 bg-white/75 p-6 shadow-(--card-shadow) backdrop-blur">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <h2 className="text-xl font-semibold text-foreground">Active escrows</h2>
+                    <h2 className="heading-2">Active escrows</h2>
                     <p className="mt-1 text-sm text-(--ink-muted)">
                       Live view of escrow states requiring attention or verification.
                     </p>
@@ -580,128 +489,224 @@ export default function DashboardPage() {
                     New escrow
                   </Link>
                 </div>
-                <div className="mt-5 space-y-3">
-                  {ACTIVE_ESCROWS.map((escrow) => (
-                    <Link
-                      key={escrow.id}
-                      className="flex flex-wrap items-center justify-between gap-4 rounded-[24px] border border-white/70 bg-white/80 px-4 py-4 shadow-(--card-shadow)"
-                      href={escrow.href}
-                    >
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">{escrow.id}</p>
-                        <p className="mt-1 text-sm text-(--ink-muted)">
-                          {escrow.buyer} -&gt; {escrow.seller}
-                        </p>
-                        <p className="mt-1 text-xs text-(--ink-soft)">{escrow.corridor}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-foreground">{escrow.amount}</p>
-                        <p className="mt-1 text-xs text-(--ink-soft)">{escrow.updated}</p>
-                      </div>
-                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusStyles(escrow.status)}`}>
-                        {escrow.status.replaceAll("_", " ")}
-                      </span>
-                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getRiskStyles(escrow.risk)}`}>
-                        {escrow.risk} risk
-                      </span>
-                    </Link>
-                  ))}
-                </div>
+                <motion.div
+                  className="mt-5 space-y-3"
+                  initial="hidden"
+                  animate="visible"
+                  variants={LIST_VARIANTS}
+                >
+                  {!user ? (
+                    <div className="rounded-[24px] border border-white/70 bg-white/80 px-4 py-4 text-sm text-(--ink-muted)">
+                      Sign in to see your active escrows.
+                    </div>
+                  ) : isEscrowLoading ? (
+                    <div className="rounded-[24px] border border-white/70 bg-white/80 px-4 py-4 text-sm text-(--ink-muted)">
+                      Loading escrows...
+                    </div>
+                  ) : escrows.length === 0 ? (
+                    <div className="rounded-[24px] border border-white/70 bg-white/80 px-4 py-4 text-sm text-(--ink-muted)">
+                      No escrows yet.
+                    </div>
+                  ) : (
+                    escrows.map((escrow) => (
+                      <motion.div
+                        key={escrow.id}
+                        variants={ITEM_VARIANTS}
+                        transition={{ duration: 0.35, ease: "easeOut" }}
+                      >
+                        <Link
+                          className="flex flex-wrap items-center justify-between gap-4 rounded-[24px] border border-white/70 bg-white/80 px-4 py-4 shadow-(--card-shadow)"
+                          href={`/escrow/${escrow.id}`}
+                        >
+                          <div>
+                            <p className="text-sm font-semibold text-foreground">{escrow.id}</p>
+                            <p className="mt-1 text-sm text-(--ink-muted)">
+                              {escrow.amount} {escrow.currency} · {escrow.buyer_email}
+                            </p>
+                            {escrow.description && (
+                              <p className="mt-1 text-xs text-(--ink-soft)">{escrow.description}</p>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-semibold text-foreground">
+                              {escrow.updated_at ? "Updated" : "Created"}
+                            </p>
+                            <p className="mt-1 text-xs text-(--ink-soft)">
+                              {escrow.updated_at ?? "--"}
+                            </p>
+                          </div>
+                          <span
+                            className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusStyles(
+                              escrow.status
+                            )}`}
+                          >
+                            {escrow.status.replaceAll("_", " ")}
+                          </span>
+                        </Link>
+                      </motion.div>
+                    ))
+                  )}
+                </motion.div>
+                {escrowError && (
+                  <div className="mt-4 rounded-[24px] border border-white/70 bg-white/80 px-4 py-4 text-sm text-(--ink-muted)">
+                    <p className="font-semibold text-foreground">{escrowError.title}</p>
+                    <p className="mt-1">{escrowError.message}</p>
+                  </div>
+                )}
               </div>
 
               <div className="grid gap-6">
-                <section className="rounded-[30px] border border-white/70 bg-white/75 p-5 shadow-(--card-shadow) backdrop-blur">
-                  <h3 className="text-lg font-semibold text-foreground">Review queue</h3>
-                  <p className="mt-1 text-sm text-(--ink-muted)">Escrows awaiting human decision.</p>
-                  <div className="mt-4 space-y-3">
-                    {REVIEW_QUEUE.map((item) => (
-                      <Link
-                        key={item.id}
-                        className="block rounded-[22px] border border-white/70 bg-white/80 p-4 shadow-(--card-shadow)"
-                        href={item.href}
-                      >
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm font-semibold text-foreground">{item.id}</p>
-                          <span className="text-xs text-(--ink-soft)">{item.updated}</span>
-                        </div>
-                        <p className="mt-2 text-sm text-(--ink-muted)">{item.seller}</p>
-                        <p className="mt-1 text-xs text-(--ink-soft)">{item.reason}</p>
-                        <p className="mt-2 text-xs font-semibold text-(--accent-positive-ink)">
-                          Review signal {item.confidence}
-                        </p>
-                      </Link>
-                    ))}
-                  </div>
-                </section>
+                {isAdmin && (
+                  <section className="rounded-[30px] border border-white/70 bg-white/75 p-5 shadow-(--card-shadow) backdrop-blur">
+                    <h3 className="heading-3">Review queue</h3>
+                    <p className="mt-2 text-sm text-(--ink-muted)">Escrows awaiting human decision.</p>
+                    <div className="mt-4 rounded-[22px] border border-white/70 bg-white/80 p-4 text-sm text-(--ink-muted)">
+                      <p>No items currently under review.</p>
+                    </div>
+                  </section>
+                )}
 
-                <section className="rounded-[30px] border border-white/70 bg-white/75 p-5 shadow-(--card-shadow) backdrop-blur">
-                  <h3 className="text-lg font-semibold text-foreground">Live activity</h3>
-                  <div className="mt-4 space-y-3">
-                    {ACTIVITY.map((item) => (
-                      <div key={item.label} className="rounded-[22px] bg-(--surface-alt) px-4 py-3">
-                        <p className="text-sm font-semibold text-foreground">{item.label}</p>
-                        <p className="text-xs text-(--ink-soft)">{item.meta}</p>
-                        <p className="text-xs text-(--ink-muted)">{item.time}</p>
+                {isAdmin && (
+                  <section className="rounded-[30px] border border-white/70 bg-white/75 p-5 shadow-(--card-shadow) backdrop-blur">
+                    <h3 className="heading-3">Live activity</h3>
+                    <div className="mt-4 rounded-[22px] bg-(--surface-alt) px-4 py-3 text-sm text-(--ink-muted)">
+                      <p>No activity logged.</p>
+                    </div>
+                  </section>
+                )}
+
+                {!isAdmin && (
+                  <section className="rounded-[30px] border border-white/70 bg-white/75 p-5 shadow-(--card-shadow) backdrop-blur">
+                    <h3 className="heading-3">Quick tips</h3>
+                    <p className="mt-1 text-sm text-(--ink-muted)">Get the most out of Border Safe.</p>
+                    <div className="mt-4 space-y-3">
+                      <div className="rounded-[22px] bg-(--surface-alt) px-4 py-3">
+                        <p className="text-sm font-semibold text-foreground">Enable notifications</p>
+                        <p className="mt-1 text-xs text-(--ink-muted)">Get instant updates on your escrows</p>
                       </div>
-                    ))}
-                  </div>
-                </section>
+                      <div className="rounded-[22px] bg-(--surface-alt) px-4 py-3">
+                        <p className="text-sm font-semibold text-foreground">Link payment method</p>
+                        <p className="mt-1 text-xs text-(--ink-muted)">Speed up payouts with saved accounts</p>
+                      </div>
+                    </div>
+                  </section>
+                )}
               </div>
             </section>
 
             <section className="grid gap-6 lg:grid-cols-[1.4fr_0.6fr]">
-              <div className="rounded-[32px] border border-white/70 bg-white/75 p-6 shadow-(--card-shadow) backdrop-blur">
-                <h2 className="text-xl font-semibold text-foreground">Recent payouts</h2>
-                <p className="mt-1 text-sm text-(--ink-muted)">Latest releases executed by payout partners.</p>
-                <div className="mt-5 space-y-3">
-                  {PAYOUTS.map((payout) => (
-                    <div
-                      key={payout.id}
-                      className="flex flex-wrap items-center justify-between gap-4 rounded-[24px] bg-(--surface-alt) px-4 py-3"
-                    >
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">{payout.beneficiary}</p>
-                        <p className="text-xs text-(--ink-soft)">{payout.id}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-foreground">{payout.amount}</p>
-                        <p className="text-xs text-(--ink-soft)">{payout.time}</p>
-                      </div>
-                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getPayoutStyles(payout.status)}`}>
-                        {payout.status}
-                      </span>
-                    </div>
-                  ))}
+              {isAdmin && (
+                <div className="rounded-[32px] border border-white/70 bg-white/75 p-6 shadow-(--card-shadow) backdrop-blur">
+                  <h2 className="heading-2">Recent payouts</h2>
+                  <p className="mt-2 text-sm text-(--ink-muted)">Latest releases executed by payout partners.</p>
+                  <div className="mt-5 rounded-[24px] border border-white/70 bg-white/80 p-4 text-sm text-(--ink-muted)">
+                    <p>No recent payouts.</p>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {!isAdmin && (
+                <div className="rounded-[32px] border border-white/70 bg-white/75 p-6 shadow-(--card-shadow) backdrop-blur">
+                  <h2 className="heading-2">Recent transactions</h2>
+                  <p className="mt-1 text-sm text-(--ink-muted)">Your latest escrow activity and updates.</p>
+                  <div className="mt-5 space-y-3">
+                    {escrows.length > 0 ? (
+                      escrows.slice(0, 3).map((escrow) => (
+                        <div
+                          key={escrow.id}
+                          className="flex flex-wrap items-center justify-between gap-4 rounded-[24px] bg-(--surface-alt) px-4 py-3"
+                        >
+                          <div>
+                            <p className="text-sm font-semibold text-foreground">{escrow.id}</p>
+                            <p className="text-xs text-(--ink-soft)">
+                              {escrow.amount} {escrow.currency}
+                            </p>
+                          </div>
+                          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusStyles(escrow.status)}`}>
+                            {escrow.status.replaceAll("_", " ")}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="rounded-[24px] bg-(--surface-alt) px-4 py-3 text-sm text-(--ink-muted)">
+                        No transactions yet. Start your first escrow!
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div className="rounded-[32px] border border-white/70 bg-white/75 p-6 shadow-(--card-shadow) backdrop-blur">
-                <h2 className="text-xl font-semibold text-foreground">Quick actions</h2>
+                <h2 className="heading-2">Quick actions</h2>
                 <div className="mt-4 grid gap-3">
-                  <Link
-                    className="rounded-[22px] bg-(--action) px-4 py-3 text-sm font-semibold text-(--action-ink)"
-                    href="/escrow/new"
-                  >
-                    Create escrow
-                  </Link>
-                  <Link
-                    className="rounded-[22px] border border-white/70 bg-white/80 px-4 py-3 text-sm font-semibold text-foreground"
-                    href="/wallet"
-                  >
-                    Open wallet
-                  </Link>
-                  <Link
-                    className="rounded-[22px] border border-white/70 bg-white/80 px-4 py-3 text-sm font-semibold text-foreground"
-                    href="/wallet/send-money"
-                  >
-                    Send payout
-                  </Link>
+                  {isAdmin ? (
+                    <>
+                      <Link
+                        className="rounded-[22px] bg-(--action) px-4 py-3 text-sm font-semibold text-(--action-ink)"
+                        href="/admin"
+                      >
+                        Review queue
+                      </Link>
+                      <Link
+                        className="rounded-[22px] border border-white/70 bg-white/80 px-4 py-3 text-sm font-semibold text-foreground"
+                        href="/escrow"
+                      >
+                        Inspect escrows
+                      </Link>
+                      <Link
+                        className="rounded-[22px] border border-white/70 bg-white/80 px-4 py-3 text-sm font-semibold text-foreground"
+                        href="/wallet"
+                      >
+                        Open wallet
+                      </Link>
+                    </>
+                  ) : isSeller ? (
+                    <>
+                      <Link
+                        className="rounded-[22px] bg-(--action) px-4 py-3 text-sm font-semibold text-(--action-ink)"
+                        href="/escrow/new"
+                      >
+                        Create escrow
+                      </Link>
+                      <Link
+                        className="rounded-[22px] border border-white/70 bg-white/80 px-4 py-3 text-sm font-semibold text-foreground"
+                        href="/dashboard/stores"
+                      >
+                        Manage stores
+                      </Link>
+                      <Link
+                        className="rounded-[22px] border border-white/70 bg-white/80 px-4 py-3 text-sm font-semibold text-foreground"
+                        href="/wallet"
+                      >
+                        Open wallet
+                      </Link>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        className="rounded-[22px] bg-(--action) px-4 py-3 text-sm font-semibold text-(--action-ink)"
+                        href="/escrow"
+                      >
+                        View escrows
+                      </Link>
+                      <Link
+                        className="rounded-[22px] border border-white/70 bg-white/80 px-4 py-3 text-sm font-semibold text-foreground"
+                        href="/escrow"
+                      >
+                        Confirm delivery
+                      </Link>
+                      <Link
+                        className="rounded-[22px] border border-white/70 bg-white/80 px-4 py-3 text-sm font-semibold text-foreground"
+                        href="/wallet"
+                      >
+                        Open wallet
+                      </Link>
+                    </>
+                  )}
                 </div>
               </div>
             </section>
           </div>
-        </div>
-      </div>
     </main>
   );
 }

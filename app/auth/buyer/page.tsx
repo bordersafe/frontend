@@ -1,10 +1,10 @@
 import { Suspense } from "react";
 import { AuthLoginView } from "../_components/auth-login-view";
 
-export default function LoginPage() {
+export default function BuyerLoginPage() {
   return (
     <Suspense fallback={<div />}>
-      <AuthLoginView />
+      <AuthLoginView role="buyer" />
     </Suspense>
   );
 }

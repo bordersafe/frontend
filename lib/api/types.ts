@@ -34,4 +34,5 @@ export interface ApiRequestOptions<TBody = unknown> {
   correlationId?: string;
   idempotencyKey?: string;
   includeIdempotencyKey?: boolean;
+  authToken?: string;
 }

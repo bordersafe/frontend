@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Instrument_Serif, Sora } from "next/font/google";
 import "./globals.css";
+import { ShellBoundary } from "@/app/_components/shell-boundary";
 
 const displayFont = Instrument_Serif({
   subsets: ["latin"],
@@ -16,7 +17,7 @@ const uiFont = Sora({
 
 export const metadata: Metadata = {
   title: "BorderSafe",
-  description: "AI-assisted escrow for cross-border trade with human fallback and wallet payouts.",
+  description: "AI-assisted escrow for inter-state trade in Nigeria with human fallback and wallet payouts.",
 };
 
 export default function RootLayout({
@@ -27,9 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${displayFont.variable} ${uiFont.variable} h-full antialiased`}>
       <body className="min-h-dvh bg-(--canvas) text-foreground">
-        <div className="relative mx-auto min-h-dvh w-full">
-          {children}
-        </div>
+        <ShellBoundary>{children}</ShellBoundary>
       </body>
     </html>
   );

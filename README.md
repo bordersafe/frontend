@@ -1,6 +1,6 @@
 # BorderSafe Frontend
 
-BorderSafe is a cross-border escrow application with AI-assisted dispute handling and a post-sale business wallet.
+BorderSafe is an inter-state escrow application for Nigeria with AI-assisted dispute handling and a post-sale business wallet.
 
 This repository contains the frontend implementation built with Next.js App Router.
 
