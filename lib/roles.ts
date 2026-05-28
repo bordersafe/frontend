@@ -23,3 +23,15 @@ export function canAccessAdminPanel(roles: UserRole[] | undefined): boolean {
 export function canManageEscrows(roles: UserRole[] | undefined): boolean {
   return isAdmin(roles) || isVendor(roles) || isCustomer(roles);
 }
+
+export function canAccessBuyerWorkspace(roles: UserRole[] | undefined): boolean {
+  return isCustomer(roles);
+}
+
+export function canAccessVendorWorkspace(roles: UserRole[] | undefined): boolean {
+  return isVendor(roles);
+}
+
+export function canAccessAdminWorkspace(roles: UserRole[] | undefined): boolean {
+  return isAdmin(roles);
+}

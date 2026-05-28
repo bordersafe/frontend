@@ -1,11 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 
-import { normalizeApiError } from "@/lib/api";
 import { useAuthedApi } from "@/lib/api/auth-client";
-import type { UiError } from "@/lib/api";
+import { PayoutScheduleWidget } from "./_components/payout-schedule-widget";
+import { PayoutHistoryTable } from "./_components/payout-history-table";
+import { BankAccountManager } from "./_components/bank-account-manager";
+import { ImmediatePayoutModal } from "./_components/immediate-payout-modal";
+import type {
+  PayoutScheduleResponse,
+  PayoutHistoryResponse,
+  BankAccountsListResponse,
+} from "@/lib/api/types";
 
 type WalletSummary = {
   wallet_id: string;
@@ -14,33 +22,65 @@ type WalletSummary = {
   updated_at: string | null;
 };
 
+function formatRelativeTime(dateStr: string | null): string {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "";
+  const secs = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (secs < 60) return `${secs}s ago`;
+  if (secs < 3600) return `${Math.floor(secs / 60)}m ago`;
+  if (secs < 86400) return `${Math.floor(secs / 3600)}h ago`;
+  return `${Math.floor(secs / 86400)}d ago`;
+}
+
+function WalletSkeleton() {
+  return (
+    <div className="panel p-6">
+      <div className="skeleton h-3 w-24 mb-4" />
+      <div className="skeleton h-12 w-56 mb-4" />
+      <div className="skeleton h-6 w-32 mb-5 rounded-full" />
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[1, 2, 3, 4].map((i) => <div key={i} className="skeleton h-12 w-full rounded-2xl" />)}
+      </div>
+    </div>
+  );
+}
+
 export default function WalletPage() {
-  const { user, isAuthLoading, get } = useAuthedApi();
-  const [wallet, setWallet] = useState<WalletSummary | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<UiError | null>(null);
+  const { get } = useAuthedApi();
+  const [isPayoutModalOpen, setIsPayoutModalOpen] = useState(false);
 
-  const fetchWallet = async () => {
-    if (!user) return;
+  const { data: wallet, isLoading: walletLoading, isValidating: walletRefreshing } = useSWR<WalletSummary>(
+    "wallet",
+    async () => get<WalletSummary>("/api/wallet"),
+    { revalidateOnFocus: true, revalidateOnReconnect: true }
+  );
 
-    setIsLoading(true);
-    setError(null);
+  const { data: payoutSchedule, isLoading: scheduleLoading, mutate: refreshSchedule } =
+    useSWR<PayoutScheduleResponse>(
+      "payout-schedule",
+      async () => get<PayoutScheduleResponse>("/api/wallet/payout/schedule"),
+      { refreshInterval: 60000 }
+    );
 
-    try {
-      const response = await get<WalletSummary>("/api/wallet");
-      setWallet(response);
-    } catch (err) {
-      setError(normalizeApiError(err));
-    } finally {
-      setIsLoading(false);
-    }
+  const { data: payoutHistory, isLoading: historyLoading, mutate: refreshHistory } =
+    useSWR<PayoutHistoryResponse>(
+      "payout-history",
+      async () => get<PayoutHistoryResponse>("/api/wallet/payout/history"),
+      { refreshInterval: 60000 }
+    );
+
+  const { data: bankAccounts, isLoading: accountsLoading, mutate: refreshAccounts } =
+    useSWR<BankAccountsListResponse>(
+      "bank-accounts",
+      async () => get<BankAccountsListResponse>("/api/wallet/bank-accounts"),
+      { refreshInterval: 60000 }
+    );
+
+  const handlePayoutSuccess = async () => {
+    await refreshSchedule();
+    await refreshHistory();
   };
-
-  useEffect(() => {
-    if (!isAuthLoading && user) {
-      void fetchWallet();
-    }
-  }, [isAuthLoading, user]);
 
   const formattedBalance = wallet
     ? new Intl.NumberFormat("en-NG", {
@@ -48,112 +88,112 @@ export default function WalletPage() {
         currency: wallet.currency ?? "NGN",
         maximumFractionDigits: 2,
       }).format(wallet.available_balance ?? 0)
-    : "--";
-  const quickActions = [
-    { label: "Send", href: "/wallet/send-money" },
-    { label: "Cardless", href: "/wallet/cardless" },
-    { label: "VAS", href: "/wallet/vas" },
+    : null;
+
+  const quickActions: Array<
+    | { label: string; icon: string; href: string; variant: string; action?: never }
+    | { label: string; icon: string; action: () => void; variant: string; href?: never }
+  > = [
+    { label: "Send",           icon: "↗",  href: "/wallet/send-money", variant: "btn-secondary" },
+    { label: "Cardless",       icon: "💳", href: "/wallet/cardless",   variant: "btn-secondary" },
+    { label: "VAS",            icon: "⚡", href: "/wallet/vas",        variant: "btn-secondary" },
+    { label: "Request Payout", icon: "₦",  action: () => setIsPayoutModalOpen(true), variant: "btn-primary" },
   ];
 
   return (
-    <main className="flex min-h-full flex-col gap-6 px-4 py-6 sm:px-8 lg:px-10">
-      <section className="panel p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="subheading">
-              {user ? "Wallet overview" : "Sign in to access your wallet"}
-            </p>
-            <div className="mt-3 text-xs text-(--ink-soft)">
-              <p>{wallet?.currency ?? "NGN"} · Primary balance</p>
-            </div>
-            <h1 className="heading-1">
-              {isLoading ? "Loading..." : formattedBalance}
-            </h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <button className="btn-secondary h-10 w-10 text-xs" type="button">
-              ...
-            </button>
-            <button className="btn-secondary h-10 w-10 text-xs" type="button">
-              o
-            </button>
-          </div>
-        </div>
+    <main className="flex min-h-full flex-col gap-6">
 
-        <div className="mt-4 inline-flex rounded-full bg-(--accent-positive)/20 px-3 py-1 text-xs font-semibold text-(--accent-positive-ink)">
-          {wallet?.updated_at ? `Updated ${wallet.updated_at}` : "Balance snapshot"}
-        </div>
+      {/* ── Balance Hero ────────────────────────────── */}
+      {walletLoading ? (
+        <WalletSkeleton />
+      ) : (
+        <section className="panel p-6 border-l-4 border-(--success) relative overflow-hidden reveal-up">
+          {/* Glow */}
+          <div className="absolute -top-8 -right-8 h-32 w-32 rounded-full bg-(--success)/10 blur-3xl pointer-events-none" />
 
-        <div className="panel-strong mt-5 p-2">
-          <div className="grid grid-cols-3 gap-2">
-            {quickActions.map((action) => (
-              <Link
-                key={action.label}
-                className="btn-ghost px-3 py-3 text-center text-xs"
-                href={action.href}
-              >
-                {action.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="panel p-5">
-          <div className="flex items-center justify-between">
-            <h2 className="heading-3">Send again</h2>
-            <span className="text-xs text-(--ink-soft)">Recent contacts</span>
-          </div>
-          <div className="mt-4 grid grid-cols-4 gap-3">
-            {["RA", "LO", "BI", "+"].map((initials) => (
-              <div
-                key={initials}
-                className="panel-muted flex h-12 w-12 items-center justify-center text-xs font-semibold text-(--ink-muted)"
-              >
-                {initials}
+          <div className="relative">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-4xl font-bold text-foreground tracking-tight">
+                  {formattedBalance ?? "—"}
+                </p>
+                <div className="mt-3 flex items-center gap-2">
+                  <span className="chip text-xs">{wallet?.currency ?? "NGN"} · Primary</span>
+                  {wallet?.updated_at && (
+                    <span className="text-xs text-(--ink-soft)">
+                      Updated {formatRelativeTime(wallet.updated_at)}
+                    </span>
+                  )}
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
+              <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-(--success) text-white text-2xl flex-shrink-0 float-slow">
+                ₦
+              </div>
+            </div>
 
-        <div className="panel p-5">
-          <div className="flex items-center justify-between">
-            <h2 className="heading-3">Incoming transfers</h2>
-            <span className="text-xs text-(--ink-soft)">This month</span>
+            {/* Quick actions */}
+            <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {quickActions.map((action) =>
+                action.action ? (
+                  <button
+                    key={action.label}
+                    onClick={action.action}
+                    type="button"
+                    className={`${action.variant} flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm`}
+                  >
+                    <span>{action.icon}</span>
+                    {action.label}
+                  </button>
+                ) : (
+                  <Link
+                    key={action.label}
+                    href={action.href}
+                    className={`${action.variant} flex items-center justify-center gap-1.5 px-3 py-2.5 text-sm text-center`}
+                  >
+                    <span>{action.icon}</span>
+                    {action.label}
+                  </Link>
+                )
+              )}
+            </div>
           </div>
-          <div className="panel-muted mt-6 h-20" />
-          <div className="mt-4 flex items-center justify-between text-sm">
-            <span className="text-(--ink-muted)">$2,432.43</span>
-            <span className="rounded-full bg-(--accent-positive)/20 px-2 py-1 text-xs font-semibold text-(--accent-positive-ink)">
-              +2.10%
-            </span>
-          </div>
-        </div>
-      </section>
-
-      <section className="panel p-5">
-        <div className="flex items-center justify-between">
-          <h2 className="heading-3">Recent ledger</h2>
-          <span className="text-xs text-(--ink-soft)">All records</span>
-        </div>
-        <div className="mt-4 rounded-[22px] border border-white/70 bg-white/80 p-4 text-sm text-(--ink-muted)">
-          <p>No recent wallet activity yet.</p>
-          <p className="mt-1 text-xs text-(--ink-soft)">Transactions will appear here once transfers and payouts are recorded.</p>
-        </div>
-      </section>
-
-      {error && (
-        <section className="panel-outline p-5 text-sm text-(--ink-muted)">
-          <p className="font-semibold text-foreground">{error.title}</p>
-          <p className="mt-1">{error.message}</p>
-          {error.correlationId && (
-            <p className="mt-2 text-xs text-(--ink-soft)">
-              Correlation ID: {error.correlationId}
-            </p>
-          )}
         </section>
       )}
+
+      {/* ── Payout management ────────────────────────── */}
+      <section className="grid gap-5 lg:grid-cols-2 reveal-up delay-80">
+        <PayoutScheduleWidget schedule={payoutSchedule ?? null} isLoading={scheduleLoading} />
+        <BankAccountManager accounts={bankAccounts ?? null} isLoading={accountsLoading} onRefresh={refreshAccounts} />
+      </section>
+
+      {/* ── Payout history ────────────────────────────── */}
+      <div className="reveal-up delay-160">
+        <PayoutHistoryTable history={payoutHistory ?? null} isLoading={historyLoading} />
+      </div>
+
+      {/* ── Recent wallet activity placeholder ─────────── */}
+      <section className="panel p-6 reveal-up delay-220">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold text-foreground">Recent wallet activity</h2>
+          <Link href="/escrow" className="text-xs font-semibold text-(--primary) hover:underline">
+            View escrows →
+          </Link>
+        </div>
+        <div className="py-6 flex flex-col items-center gap-3 text-center">
+          <div className="text-4xl float-slow">💰</div>
+          <p className="text-sm text-(--ink-muted)">
+            No recent wallet transactions. Payouts will appear here after disbursement.
+          </p>
+        </div>
+      </section>
+
+      <ImmediatePayoutModal
+        isOpen={isPayoutModalOpen}
+        availableBalance={wallet?.available_balance ?? 0}
+        bankAccounts={bankAccounts ?? null}
+        onClose={() => setIsPayoutModalOpen(false)}
+        onSuccess={handlePayoutSuccess}
+      />
     </main>
   );
 }

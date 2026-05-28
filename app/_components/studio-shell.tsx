@@ -8,6 +8,8 @@ import { signOut } from "firebase/auth";
 import useSWR from "swr";
 import { useAuthedApi } from "@/lib/api/auth-client";
 import { firebaseAuth } from "@/lib/firebase";
+import { NotificationCenter, NotificationBell } from "./notification-center";
+import { canAccessAdminWorkspace, canAccessBuyerWorkspace, canAccessVendorWorkspace } from "@/lib/roles";
 
 type NavItem = {
   label: string;
@@ -31,6 +33,11 @@ const NAV_ITEMS: NavItem[] = [
   {
     label: "Overview",
     href: "/dashboard",
+    description: "",
+  },
+  {
+    label: "Buyer center",
+    href: "/buyer",
     description: "",
   },
   {
@@ -127,17 +134,6 @@ const IconSearch = ({ className = "h-4 w-4" }: { className?: string }) => (
   </svg>
 );
 
-const IconBell = ({ className = "h-4 w-4" }: { className?: string }) => (
-  <svg aria-hidden="true" className={className} fill="none" viewBox="0 0 24 24">
-    <path
-      d="M6 9a6 6 0 1 1 12 0c0 5 2 5 2 7H4c0-2 2-2 2-7Z"
-      stroke="currentColor"
-      strokeWidth="1.6"
-    />
-    <path d="M10 18a2 2 0 0 0 4 0" stroke="currentColor" strokeWidth="1.6" />
-  </svg>
-);
-
 const IconSpark = ({ className = "h-4 w-4" }: { className?: string }) => (
   <svg aria-hidden="true" className={className} fill="none" viewBox="0 0 24 24">
     <path d="m12 3 2.2 5.8L20 11l-5.8 2.2L12 19l-2.2-5.8L4 11l5.8-2.2L12 3Z" stroke="currentColor" strokeWidth="1.6" />
@@ -156,7 +152,7 @@ const IconChevronRight = ({ className = "h-4 w-4" }: { className?: string }) => 
   </svg>
 );
 
-const NAV_ICONS = [IconGrid, IconLock, IconEye, IconWallet, IconStore];
+const NAV_ICONS_EXTENDED = [IconGrid, IconSpark, IconLock, IconEye, IconWallet, IconStore];
 
 function resolvePageMeta(pathname: string): PageMeta {
   if (pathname.startsWith("/escrow/new")) {
@@ -174,6 +170,12 @@ function resolvePageMeta(pathname: string): PageMeta {
   if (pathname.startsWith("/escrow")) {
     return {
       title: "Escrows",
+      description: "",
+    };
+  }
+  if (pathname.startsWith("/buyer")) {
+    return {
+      title: "Buyer center",
       description: "",
     };
   }
@@ -222,21 +224,21 @@ function resolvePageMeta(pathname: string): PageMeta {
 export function StudioShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, isAuthLoading, get } = useAuthedApi();
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-
-  useEffect(() => {
-    const storedValue = window.localStorage.getItem("border-safe-sidebar-collapsed");
-    if (storedValue) {
-      setIsSidebarCollapsed(storedValue === "1");
+  const { user, profile: authProfile, isAuthLoading, get } = useAuthedApi();
+  const roles = authProfile?.roles ?? [];
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
     }
-  }, []);
+
+    return window.localStorage.getItem("border-safe-sidebar-collapsed") === "1";
+  });
 
   useEffect(() => {
     window.localStorage.setItem("border-safe-sidebar-collapsed", isSidebarCollapsed ? "1" : "0");
   }, [isSidebarCollapsed]);
 
-  const { data: profile } = useSWR<UserProfile>(
+  const { data: fetchedProfile } = useSWR<UserProfile>(
     isAuthLoading || !user ? null : ["/api/auth/me", user.uid],
     async () => get<UserProfile>("/api/auth/me"),
     {
@@ -245,22 +247,28 @@ export function StudioShell({ children }: { children: ReactNode }) {
       shouldRetryOnError: false,
     },
   );
+  const profile = fetchedProfile ?? authProfile;
+  const canSeeVendorWorkspace = canAccessVendorWorkspace(roles) || canAccessAdminWorkspace(roles);
 
   const activeMeta = useMemo(() => resolvePageMeta(pathname ?? "/"), [pathname]);
-  const visibleNavItems = useMemo(() => {
-    const roles = profile?.roles ?? [];
+  const visibleNavItems = NAV_ITEMS.map((item, index) => ({ ...item, icon: NAV_ICONS_EXTENDED[index] ?? IconGrid })).filter((item) => {
+    const canSeeBuyerWorkspace = canAccessBuyerWorkspace(roles);
+    const canSeeAdminWorkspace = canAccessAdminWorkspace(roles);
 
-    return NAV_ITEMS.map((item, index) => ({ ...item, icon: NAV_ICONS[index] ?? IconGrid }))
-      .filter((item) => {
-        if (item.href === "/admin") {
-          return roles.some((role) => ["admin", "super_admin", "hitl"].includes(role));
-        }
-        if (item.href === "/dashboard/stores") {
-          return roles.some((role) => ["vendor", "admin", "super_admin"].includes(role));
-        }
-        return !!profile || item.href === "/dashboard";
-      });
-  }, [profile]);
+    if (item.href === "/admin") {
+      return canSeeAdminWorkspace;
+    }
+    if (item.href === "/dashboard/stores") {
+      return canSeeVendorWorkspace;
+    }
+    if (item.href === "/buyer") {
+      return canSeeBuyerWorkspace;
+    }
+    if (item.href === "/dashboard" || item.href === "/escrow" || item.href === "/wallet") {
+      return canSeeVendorWorkspace;
+    }
+    return false;
+  });
 
   const activeItem = useMemo(() => {
     return visibleNavItems.find((item) => {
@@ -276,9 +284,9 @@ export function StudioShell({ children }: { children: ReactNode }) {
       className="relative min-h-dvh bg-(--canvas)"
       data-sidebar-collapsed={isSidebarCollapsed ? "true" : "false"}
     >
-      <div className="absolute inset-0 surface-grid opacity-60" />
+      <div className="absolute inset-0 surface-grid opacity-60 pointer-events-none" />
 
-      <aside className="fixed inset-y-4 left-4 z-40 hidden w-(--sidebar-width) flex-col overflow-hidden rounded-[32px] border border-white/60 bg-white/70 pb-6 pt-8 shadow-(--shell-shadow) backdrop-blur transition-[width] duration-300 ease-out lg:flex">
+      <aside className="fixed inset-y-4 left-4 z-40 hidden w-(--sidebar-width) flex-col overflow-hidden rounded-4xl border border-white/60 bg-white/70 pb-6 pt-8 shadow-(--shell-shadow) backdrop-blur transition-[width] duration-300 ease-out lg:flex">
         <button
           aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           className="absolute -right-3 top-8 flex h-8 w-8 items-center justify-center rounded-full border border-white/70 bg-white/95 text-(--ink-muted) shadow-(--card-shadow)"
@@ -303,22 +311,7 @@ export function StudioShell({ children }: { children: ReactNode }) {
           )}
         </div>
 
-        <div className="px-6">
-          {isSidebarCollapsed ? (
-            <div className="mt-6 flex items-center justify-center rounded-3xl border border-white/70 bg-white/75 p-3 text-(--ink-muted)">
-              <IconUser className="h-4 w-4" />
-            </div>
-          ) : (
-            <div className="mt-6 rounded-3xl border border-white/70 bg-white/75 p-4 text-xs text-(--ink-muted)">
-              <p className="text-[10px] uppercase tracking-[0.3em] text-(--ink-soft)">Account</p>
-              <p className="mt-3 text-sm text-foreground">{profile?.display_name ?? "Anonymous"}</p>
-              <p className="mt-1 text-xs text-(--ink-soft)">{(profile?.roles ?? ["guest"]).join(", ")}</p>
-              <Link className="mt-4 inline-flex text-xs font-semibold text-foreground" href="/auth">
-                Switch account
-              </Link>
-            </div>
-          )}
-        </div>
+        {/* Account info removed here — shown once in the bottom profile card */}
 
         <nav className="mt-8 flex-1 px-4">
           <div className="space-y-2">
@@ -379,19 +372,36 @@ export function StudioShell({ children }: { children: ReactNode }) {
                 </div>
               )}
             </div>
+            {!isSidebarCollapsed && (
+              <Link
+                href="/buyer/settings"
+                className="mt-3 inline-flex text-xs font-semibold text-(--primary) hover:underline"
+              >
+                Settings →
+              </Link>
+            )}
             <button
               className={`mt-4 flex w-full items-center justify-center rounded-[18px] border border-white/70 bg-white/80 px-3 py-2 text-xs text-foreground ${isSidebarCollapsed ? "gap-0" : "gap-2"}`}
               type="button"
+              aria-label="Sign out"
+              title="Sign out"
               onClick={async () => {
                 try {
                   await signOut(firebaseAuth);
-                  router.push("/auth");
                 } catch {
-                  router.push("/auth");
+                  // best-effort
                 }
+                router.push("/auth/login");
               }}
             >
-              {isSidebarCollapsed ? <IconChevronLeft className="h-3.5 w-3.5 rotate-180" /> : <span>Sign out</span>}
+              {isSidebarCollapsed ? (
+                /* Sign out icon (door with arrow) */
+                <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+                  <path d="M16 17l5-5-5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M21 12H9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              ) : <span>Sign out</span>}
             </button>
           </div>
         </div>
@@ -400,7 +410,7 @@ export function StudioShell({ children }: { children: ReactNode }) {
       <div className="flex min-h-dvh flex-col lg:pl-(--sidebar-width)">
         <header className="sticky top-0 z-30 px-4 pt-4 sm:px-8 lg:px-12">
           <div className="relative overflow-hidden rounded-[30px] border border-white/70 bg-white/80 p-6 shadow-(--card-shadow) backdrop-blur">
-            <div className="absolute inset-0 section-loom" />
+            <div className="absolute inset-0 section-loom pointer-events-none" />
             <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
               <div className="space-y-2">
                 <h1 className="heading-1">{activeMeta.title}</h1>
@@ -408,50 +418,60 @@ export function StudioShell({ children }: { children: ReactNode }) {
               </div>
 
               <div className="flex flex-1 flex-wrap items-center justify-end gap-3 sm:flex-nowrap sm:justify-end">
-                <div className="relative w-full sm:max-w-[320px]">
+                <div className="relative w-full sm:max-w-[320px]" title="Search is coming soon">
                   <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-(--ink-soft)">
                     <IconSearch className="h-4 w-4" />
                   </span>
                   <input
-                    className="w-full rounded-full border border-white/70 bg-white/90 py-2 pl-9 pr-4 text-sm text-foreground outline-none"
-                    placeholder="Search escrows, buyers, sellers"
+                    className="w-full cursor-not-allowed rounded-full border border-white/70 bg-white/60 py-2 pl-9 pr-4 text-sm text-foreground/40 outline-none"
+                    placeholder="Search — coming soon"
                     type="search"
+                    disabled
+                    aria-label="Search (coming soon)"
                   />
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <NotificationBell />
                   <button
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-white/90 text-(--ink-muted)"
+                    className="flex h-10 w-10 cursor-not-allowed items-center justify-center rounded-full border border-white/70 bg-white/60 text-(--ink-soft)"
                     type="button"
-                    aria-label="Notifications"
-                  >
-                    <IconBell className="h-4 w-4" />
-                  </button>
-                  <button
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-white/90 text-(--ink-muted)"
-                    type="button"
-                    aria-label="Insights"
+                    aria-label="Insights (coming soon)"
+                    title="Insights — coming soon"
+                    disabled
                   >
                     <IconSpark className="h-4 w-4" />
                   </button>
-                  <Link
-                    className="rounded-full bg-(--action) px-4 py-2 text-xs font-semibold text-(--action-ink)"
-                    href="/escrow/new"
-                  >
-                    New escrow
-                  </Link>
+                  {canSeeVendorWorkspace && (
+                    <Link
+                      className="rounded-full bg-(--action) px-4 py-2 text-xs font-semibold text-(--action-ink)"
+                      href="/escrow/new"
+                    >
+                      New escrow
+                    </Link>
+                  )}
                 </div>
               </div>
             </div>
 
             <div className="relative z-10 mt-4 flex gap-2 overflow-x-auto pb-1 lg:hidden">
-              {NAV_ITEMS.map((item, index) => {
-                const Icon = NAV_ICONS[index] ?? IconGrid;
+              {visibleNavItems.map((item) => {
+                const Icon = item.icon;
+                const isMobileActive =
+                  pathname === item.href ||
+                  (item.href === "/dashboard"
+                    ? pathname.startsWith("/dashboard")
+                    : pathname.startsWith(`${item.href}/`));
                 return (
                   <Link
                     key={item.label}
-                    className="flex items-center gap-2 rounded-full border border-white/70 bg-white/90 px-3 py-2 text-xs font-semibold text-(--ink-muted)"
+                    className={`flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold transition ${
+                      isMobileActive
+                        ? "border-(--action) bg-(--action) text-(--action-ink)"
+                        : "border-white/70 bg-white/90 text-(--ink-muted) hover:text-foreground"
+                    }`}
                     href={item.href}
+                    aria-current={isMobileActive ? "page" : undefined}
                   >
                     <Icon className="h-3.5 w-3.5" />
                     {item.label}
@@ -464,6 +484,8 @@ export function StudioShell({ children }: { children: ReactNode }) {
 
         <div className="flex-1 px-4 pb-10 pt-6 sm:px-8 lg:px-12">{children}</div>
       </div>
+
+      <NotificationCenter />
     </div>
   );
 }

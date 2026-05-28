@@ -3,7 +3,7 @@
 Source of truth: [new_docs/checklist.md](new_docs/checklist.md)
 
 ## Product Summary
-BorderSafe is an inter-state escrow platform for B2B trade in Nigeria. It locks buyer funds, tracks delivery, and uses AI to reduce fraud and dispute time. This frontend focuses on a clean, demo-ready flow that proves the full escrow lifecycle.
+BorderSafe is an inter-state escrow platform for B2B trade in Nigeria. It locks buyer funds, tracks delivery, and uses AI to reduce fraud and dispute time. This frontend focuses on a clean end-to-end flow that proves the full escrow lifecycle.
 
 ## Core User Journey and Screens
 1) **Vendor creates escrow**
@@ -84,9 +84,9 @@ BorderSafe is an inter-state escrow platform for B2B trade in Nigeria. It locks 
 - [x] Admin list view for unresolved escrows
 - [x] Admin decision UI with AI summary and proof
 
-### Phase 4: Demo and Pitch Readiness
-- [ ] UI polish for smooth demo walk-through
-- [ ] Short demo flow script and test run
+### Phase 4: Launch Readiness
+- [ ] UI polish for a smooth end-to-end walk-through
+- [ ] Short flow script and validation run
 
 ### Phase 5: Hackathon Rubric Alignment
 - [x] AI integration explained in UI
@@ -96,4 +96,4 @@ BorderSafe is an inter-state escrow platform for B2B trade in Nigeria. It locks 
 ## Scope Guardrails
 - Keep the UI focused on the core escrow flow.
 - No marketplace features.
-- Prioritize one happy path for the demo.
+- Prioritize one happy path.

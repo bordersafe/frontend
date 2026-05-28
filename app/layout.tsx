@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Instrument_Serif, Sora } from "next/font/google";
 import "./globals.css";
 import { ShellBoundary } from "@/app/_components/shell-boundary";
+import { ToastProvider } from "@/lib/toast-context";
 
 const displayFont = Instrument_Serif({
   subsets: ["latin"],
@@ -28,7 +29,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${displayFont.variable} ${uiFont.variable} h-full antialiased`}>
       <body className="min-h-dvh bg-(--canvas) text-foreground">
-        <ShellBoundary>{children}</ShellBoundary>
+        <ToastProvider>
+          <ShellBoundary>{children}</ShellBoundary>
+        </ToastProvider>
       </body>
     </html>
   );

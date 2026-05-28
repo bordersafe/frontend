@@ -2,44 +2,27 @@
 
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { normalizeApiError } from "@/lib/api";
-import type { UiError } from "@/lib/api";
+import type { UiError, StoreListResponse, StoreCreateResponse, StoreSummary } from "@/lib/api";
 import { useAuthedApi } from "@/lib/api/auth-client";
+import { canAccessVendorWorkspace } from "@/lib/roles";
 
-type StoreSummary = {
-  id: string;
-  name: string;
-  slug: string;
-  status: string;
-  role: string;
-  created_at: string | null;
-  updated_at: string | null;
-};
-
-type StoreListResponse = {
-  count: number;
-  items: StoreSummary[];
-};
-
-type StoreCreateResponse = {
-  id: string;
-  name: string;
-  slug: string;
-  status: string;
-  owner_id: string;
-  created_at: string | null;
-  updated_at: string | null;
-};
+// Use shared StoreSummary from API types
 
 export default function StoreSetupPage() {
-  const { user, isAuthLoading, get, post } = useAuthedApi();
+  const router = useRouter();
+  const { user, profile, isAuthLoading, get, post } = useAuthedApi();
   const [stores, setStores] = useState<StoreSummary[]>([]);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<UiError | null>(null);
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [verifyResult, setVerifyResult] = useState<string | null>(null);
+  const canManageStores = canAccessVendorWorkspace(profile?.roles);
 
   const fetchStores = useCallback(async () => {
     if (!user) return;
@@ -62,6 +45,38 @@ export default function StoreSetupPage() {
       void fetchStores();
     }
   }, [fetchStores, isAuthLoading, user]);
+
+  useEffect(() => {
+    if (isAuthLoading || !profile) {
+      return;
+    }
+
+    if (canManageStores) {
+      return;
+    }
+
+    if (profile.roles.includes("customer")) {
+      router.replace("/buyer");
+      return;
+    }
+
+    router.replace("/dashboard");
+  }, [canManageStores, isAuthLoading, profile, router]);
+
+  const handleVerifyApi = async () => {
+    if (!user) return;
+    setVerifyLoading(true);
+    setVerifyResult(null);
+    try {
+      const profile = await get<{ roles?: string[] }>("/api/auth/me");
+      const storesResp = await get<StoreListResponse>("/api/stores/mine");
+      setVerifyResult(JSON.stringify({ profile, stores: storesResp }, null, 2));
+    } catch (err) {
+      setVerifyResult(String(err));
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -95,9 +110,22 @@ export default function StoreSetupPage() {
         <p className="mt-2 text-sm text-(--ink-muted)">
           Create a store profile to start accepting escrowed payments and invite collaborators.
         </p>
+        <div className="mt-3">
+          <button
+            className="btn-secondary px-3 py-1 text-xs"
+            onClick={handleVerifyApi}
+            type="button"
+            disabled={!user || verifyLoading}
+          >
+            {verifyLoading ? "Verifying..." : "Verify API"}
+          </button>
+          {verifyResult && (
+            <pre className="mt-2 max-h-40 overflow-auto text-xs bg-(--surface-alt) p-2">{verifyResult}</pre>
+          )}
+        </div>
         {!isAuthLoading && !user && (
           <p className="mt-3 text-sm text-(--ink-muted)">
-            Sign in to manage stores. <Link className="font-semibold text-foreground" href="/auth">Sign in</Link>
+            Sign in to manage stores. <Link className="font-semibold text-foreground" href="/auth/login">Sign in</Link>
           </p>
         )}
       </section>

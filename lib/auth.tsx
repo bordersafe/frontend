@@ -3,6 +3,7 @@
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { useEffect, useState } from "react";
 
+import { apiClient } from "./api/client";
 import { firebaseAuth } from "./firebase";
 
 export type UserRole = "customer" | "vendor" | "hitl" | "admin" | "super_admin";
@@ -33,18 +34,16 @@ export function useAuth(): AuthState {
       if (nextUser) {
         try {
           const token = await nextUser.getIdToken();
-          const response = await fetch("/api/auth/me", {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+          const data = await apiClient.get<UserProfile>("/api/auth/me", {
+            authToken: token,
           });
 
-          if (response.ok) {
-            const data = await response.json();
+          if (data) {
             setProfile(data);
           }
         } catch (error) {
           console.error("Failed to fetch user profile:", error);
+          setProfile(null);
         }
       } else {
         setProfile(null);

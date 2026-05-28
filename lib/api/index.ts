@@ -1,3 +1,26 @@
 export { apiClient, apiRequest } from "./client";
 export { ApiClientError, normalizeApiError } from "./errors";
-export type { ApiErrorPayload, ApiMethod, ApiRequestOptions, UiError, UiErrorKind } from "./types";
+export type {
+	ApiErrorPayload,
+	ApiMethod,
+	ApiRequestOptions,
+	UiError,
+	UiErrorKind,
+	UserProfile,
+	UserRole,
+	StoreSummary,
+	StoreListResponse,
+	StoreCreateResponse,
+	BuyerOrderSummaryResponse,
+	BuyerRetentionMetricsResponse,
+	BuyerNotificationPreferenceItem,
+	BuyerNotificationPreferencesResponse,
+	BuyerFavoriteSeller,
+	BuyerFavoritesResponse,
+	EscrowDetail,
+	DisputeCreateRequest,
+	DisputeDetail,
+	DisputeCreateResponse,
+	SellerRecommendation,
+	SellerRecommendationsResponse,
+} from "./types";

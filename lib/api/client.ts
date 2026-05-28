@@ -13,6 +13,10 @@ function getApiBaseUrl(): string {
   return rawBaseUrl.replace(/\/$/, "");
 }
 
+function isNgrokHost(baseUrl: string): boolean {
+  return /https?:\/\/.+\.(ngrok-free\.app|ngrok\.io)(:\d+)?$/i.test(baseUrl);
+}
+
 function buildUrl(path: string): string {
   if (/^https?:\/\//.test(path)) {
     return path;
@@ -89,6 +93,12 @@ function buildHeaders(
 
   if (options.authToken && !headers.Authorization) {
     headers.Authorization = `Bearer ${options.authToken}`;
+  }
+
+  const baseUrl = getApiBaseUrl();
+  if (isNgrokHost(baseUrl) && !headers["ngrok-skip-browser-warning"]) {
+    // Free ngrok tunnels can block browser requests behind an interstitial unless this header is present.
+    headers["ngrok-skip-browser-warning"] = "true";
   }
 
   return headers;

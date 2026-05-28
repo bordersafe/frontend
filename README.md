@@ -64,7 +64,7 @@ Open http://localhost:3000.
 - Agent coding instructions for this repo: [.github/copilot-instructions.md](.github/copilot-instructions.md)
 - Implementation backlog: [docs/implementation-backlog.md](docs/implementation-backlog.md)
 - API contract guide: [docs/api-contracts.md](docs/api-contracts.md)
-- Testing and demo checklist: [docs/testing-and-demo-checklist.md](docs/testing-and-demo-checklist.md)
+- Testing checklist: [docs/testing-and-demo-checklist.md](docs/testing-and-demo-checklist.md)
 - Design system: [docs/design-system.md](docs/design-system.md)
 - Color system: [docs/color-system.md](docs/color-system.md)
 
@@ -82,9 +82,9 @@ Planned component domains:
 - Wallet actions and confirmations
 - Error, empty, and loading states
 
-## Hackathon Demo Goal
+## End-to-End Flow Goal
 
-Demonstrate a complete escrow journey from contract creation to either:
+Present a complete escrow journey from contract creation to either:
 - successful seller release, or
 - dispute-driven refund or human-review queue.
 
