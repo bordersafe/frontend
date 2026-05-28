@@ -12,7 +12,7 @@ export default function Home() {
               <path d="m9 12 2 2 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
-          <span className="text-base font-bold tracking-tight text-foreground">BorderSafe</span>
+          <span className="text-base font-bold tracking-tight text-foreground">VendOpay</span>
         </div>
         <div className="flex items-center gap-3">
           <Link href="/auth/login" className="px-4 py-2 text-sm font-medium text-(--ink-muted) hover:text-foreground transition-colors">Sign in</Link>
@@ -33,7 +33,7 @@ export default function Home() {
           </h1>
           
           <p className="text-lg sm:text-xl text-(--ink-muted) max-w-2xl mx-auto mb-10">
-            BorderSafe locks buyer funds, tracks delivery, and uses Gemini AI to detect fraud. Resolving disputes in hours, not weeks.
+            VendOpay locks buyer funds, tracks delivery, and uses Gemini AI to detect fraud. Resolving disputes in hours, not weeks.
           </p>
           
           <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
@@ -113,7 +113,7 @@ export default function Home() {
 
           {/* Lifecycle Bento */}
           <div className="md:col-span-3 lg:col-span-4 row-span-1 rounded-3xl border border-(--border-soft) bg-white/60 backdrop-blur-2xl p-8 overflow-hidden relative shadow-sm hover:bg-white/90 transition-colors duration-500">
-            <h3 className="text-(--ink-soft) text-sm font-semibold mb-6 tracking-widest uppercase">The BorderSafe Lifecycle</h3>
+            <h3 className="text-(--ink-soft) text-sm font-semibold mb-6 tracking-widest uppercase">The VendOpay Lifecycle</h3>
             <div className="flex items-center justify-between w-full overflow-x-auto pb-4 hide-scrollbar">
               {[
                 { title: "Create", desc: "Seller sets terms", icon: "🏪" },
@@ -155,7 +155,7 @@ export default function Home() {
                 <path d="m9 12 2 2 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
-            <span className="text-sm font-semibold text-foreground">BorderSafe</span>
+            <span className="text-sm font-semibold text-foreground">VendOpay</span>
           </div>
           <p className="text-xs text-(--ink-muted)">Secure inter-state escrow for Nigerian businesses. © {new Date().getFullYear()}</p>
           <div className="flex gap-6">

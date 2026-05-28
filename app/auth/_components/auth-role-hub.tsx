@@ -65,7 +65,7 @@ export function AuthRoleHub({
 
         <div className="mt-6 rounded-2xl border border-(--border-soft) bg-(--surface-highlight) p-4 text-sm text-(--ink-muted)">
           <p className="font-semibold text-foreground">What happens next</p>
-          <p className="mt-2">After sign-in, BorderSafe routes you to the matching buyer, seller, or admin workspace based on your account roles.</p>
+          <p className="mt-2">After sign-in, VendOpay routes you to the matching buyer, seller, or admin workspace based on your account roles.</p>
         </div>
       </section>
     </main>

@@ -1,9 +1,9 @@
-# BorderSafe Frontend Docs (Hackathon Trajectory)
+# VendOpay Frontend Docs (Hackathon Trajectory)
 
 Source of truth: [new_docs/checklist.md](new_docs/checklist.md)
 
 ## Product Summary
-BorderSafe is an inter-state escrow platform for B2B trade in Nigeria. It locks buyer funds, tracks delivery, and uses AI to reduce fraud and dispute time. This frontend focuses on a clean end-to-end flow that proves the full escrow lifecycle.
+VendOpay is an inter-state escrow platform for B2B trade in Nigeria. It locks buyer funds, tracks delivery, and uses AI to reduce fraud and dispute time. This frontend focuses on a clean end-to-end flow that proves the full escrow lifecycle.
 
 ## Core User Journey and Screens
 1) **Vendor creates escrow**

@@ -420,7 +420,7 @@ export default function NewEscrowPage() {
                     ) {
                       try {
                         await navigator.share({
-                          title: `BorderSafe escrow ${result.transaction_ref}`,
+                          title: `VendOpay escrow ${result.transaction_ref}`,
                           text: "Use this link to complete escrow payment.",
                           url: paymentLink,
                         });

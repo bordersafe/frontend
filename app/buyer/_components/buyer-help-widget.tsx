@@ -74,7 +74,7 @@ export function BuyerHelpWidget() {
     },
     protection: {
       label: "Your Protections",
-      description: "How BorderSafe protects your purchases",
+      description: "How VendOpay protects your purchases",
       icon: "🔒",
     },
     dispute: {
@@ -147,8 +147,8 @@ export function BuyerHelpWidget() {
         <p className="text-sm font-semibold text-blue-900">Can't find what you need?</p>
         <p className="text-xs text-blue-800 mt-1">
           Contact our support team at{" "}
-          <a href="mailto:support@bordersafe.ng" className="font-semibold hover:underline">
-            support@bordersafe.ng
+          <a href="mailto:support@vendopay.ng" className="font-semibold hover:underline">
+            support@vendopay.ng
           </a>
         </p>
       </div>

@@ -70,7 +70,7 @@ export default function VasPage() {
         <div>
           <h1 className="heading-2">Airtime &amp; VAS</h1>
           <p className="mt-1 text-sm text-(--ink-muted)">
-            Purchase airtime or data for any Nigerian network operator, charged from your BorderSafe wallet.
+            Purchase airtime or data for any Nigerian network operator, charged from your VendOpay wallet.
           </p>
         </div>
       </header>

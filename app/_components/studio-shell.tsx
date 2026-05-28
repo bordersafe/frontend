@@ -231,11 +231,11 @@ export function StudioShell({ children }: { children: ReactNode }) {
       return false;
     }
 
-    return window.localStorage.getItem("border-safe-sidebar-collapsed") === "1";
+    return window.localStorage.getItem("vendopay-sidebar-collapsed") === "1";
   });
 
   useEffect(() => {
-    window.localStorage.setItem("border-safe-sidebar-collapsed", isSidebarCollapsed ? "1" : "0");
+    window.localStorage.setItem("vendopay-sidebar-collapsed", isSidebarCollapsed ? "1" : "0");
   }, [isSidebarCollapsed]);
 
   const { data: fetchedProfile } = useSWR<UserProfile>(
@@ -298,7 +298,7 @@ export function StudioShell({ children }: { children: ReactNode }) {
 
         <div className={`flex items-center gap-3 px-6 ${isSidebarCollapsed ? "justify-center px-4" : ""}`}>
           <Image
-            alt="BorderSafe logo"
+            alt="VendOpay logo"
             className="h-12 w-12 rounded-[18px] object-cover"
             src="/images/logo.svg"
             width={48}
@@ -306,7 +306,7 @@ export function StudioShell({ children }: { children: ReactNode }) {
           />
           {!isSidebarCollapsed && (
             <div>
-              <p className="text-sm font-semibold text-foreground">BorderSafe</p>
+              <p className="text-sm font-semibold text-foreground">VendOpay</p>
             </div>
           )}
         </div>

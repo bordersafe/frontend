@@ -17,7 +17,7 @@ const uiFont = Sora({
 });
 
 export const metadata: Metadata = {
-  title: "BorderSafe",
+  title: "VendOpay",
   description: "AI-assisted escrow for inter-state trade in Nigeria with human fallback and wallet payouts.",
 };
 

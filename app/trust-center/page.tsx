@@ -37,7 +37,7 @@ const faqItems: FaqItem[] = [
   {
     question: "What's the refund process?",
     answer:
-      "If a dispute is decided in your favor, the seller's escrowed funds are released back to your wallet account immediately. Refunds to your original bank account take 1–3 business days depending on your bank. You can request to keep funds in your BorderSafe wallet for faster future purchases.",
+      "If a dispute is decided in your favor, the seller's escrowed funds are released back to your wallet account immediately. Refunds to your original bank account take 1–3 business days depending on your bank. You can request to keep funds in your VendOpay wallet for faster future purchases.",
   },
   {
     question: "How do I know if a seller is trustworthy?",
@@ -47,7 +47,7 @@ const faqItems: FaqItem[] = [
   {
     question: "Can I cancel my order?",
     answer:
-      "Yes, up to 3 hours after placing an order (before the seller ships). After shipping, you can still open a dispute if goods are delayed or defective. Contact us at support@bordersafe.ng or use the Help section in your order timeline.",
+      "Yes, up to 3 hours after placing an order (before the seller ships). After shipping, you can still open a dispute if goods are delayed or defective. Contact us at support@vendopay.ng or use the Help section in your order timeline.",
   },
 ];
 
@@ -124,7 +124,7 @@ export default function BuyerTrustCenterPage() {
             <Link href="/escrow/new" className="btn-primary px-5 py-2.5 text-sm">
               Create an escrow
             </Link>
-            <a href="mailto:support@bordersafe.ng" className="btn-secondary px-5 py-2.5 text-sm">
+            <a href="mailto:support@vendopay.ng" className="btn-secondary px-5 py-2.5 text-sm">
               Contact support
             </a>
           </div>
@@ -216,7 +216,7 @@ export default function BuyerTrustCenterPage() {
           Our support team is here to help 24/7. Reach out with any concern about your order or protection.
         </p>
         <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-center">
-          <a href="mailto:support@bordersafe.ng" className="btn-secondary inline-block px-5 py-2.5 text-sm">
+          <a href="mailto:support@vendopay.ng" className="btn-secondary inline-block px-5 py-2.5 text-sm">
             Email support
           </a>
           <Link href="/escrow" className="btn-primary inline-block px-5 py-2.5 text-sm">

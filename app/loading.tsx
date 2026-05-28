@@ -1,5 +1,5 @@
 import { RouteLoading } from "@/app/_components/route-fallback";
 
 export default function Loading() {
-  return <RouteLoading title="Loading BorderSafe" />;
+  return <RouteLoading title="Loading VendOpay" />;
 }

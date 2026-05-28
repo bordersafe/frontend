@@ -36,7 +36,7 @@ export function ReactivationCampaignWidget({ lastPurchaseDate }: { lastPurchaseD
     {
       id: "buyer-rewards",
       headline: "Unlock buyer protection credits",
-      description: "Return to BorderSafe and earn credits toward your next purchase. Every successful order builds your trust tier.",
+      description: "Return to VendOpay and earn credits toward your next purchase. Every successful order builds your trust tier.",
       cta: "Start shopping",
       ctaHref: "/buyer",
       badge: "EXCLUSIVE",

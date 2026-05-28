@@ -59,7 +59,7 @@ export default function SendMoneyPage() {
         <div>
           <h1 className="heading-2">Send money</h1>
           <p className="mt-1 text-sm text-(--ink-muted)">
-            Trigger a wallet send action. Funds are debited from your BorderSafe wallet balance.
+            Trigger a wallet send action. Funds are debited from your VendOpay wallet balance.
           </p>
         </div>
       </header>

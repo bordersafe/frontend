@@ -21,7 +21,7 @@ export function BuyerLoyaltyTracker() {
   const stages = {
     new: {
       label: "New Buyer",
-      description: "Your first steps on BorderSafe",
+      description: "Your first steps on VendOpay",
       progressPercent: 25,
       color: "from-blue-400 to-blue-600",
       milestones: [

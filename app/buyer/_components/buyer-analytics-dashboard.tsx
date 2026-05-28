@@ -65,7 +65,7 @@ export function BuyerAnalyticsDashboard() {
           <div>
             <h2 className="text-lg font-semibold text-foreground">Your Buyer Profile</h2>
             <p className="mt-1 text-sm text-(--ink-soft)">
-              You're a trusted buyer on BorderSafe
+              You're a trusted buyer on VendOpay
             </p>
           </div>
           <div className={`rounded-full px-4 py-2 font-semibold text-sm ${tierColors.badge}`}>

@@ -41,7 +41,7 @@ export function BuyerOnboardingGuide() {
     <section className="rounded-3xl border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-cyan-50 p-7 shadow-sm">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-foreground">Welcome to BorderSafe</h2>
+          <h2 className="text-lg font-semibold text-foreground">Welcome to VendOpay</h2>
           <p className="mt-1 text-sm text-(--ink-muted)">
             Here's how to safely buy with confidence on our platform
           </p>

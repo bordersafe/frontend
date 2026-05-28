@@ -198,7 +198,7 @@ export default function EscrowDetailPage() {
     if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
       try {
         await navigator.share({
-          title: `BorderSafe escrow ${escrow?.id ?? id}`,
+          title: `VendOpay escrow ${escrow?.id ?? id}`,
           text: "Use this link to track the escrow and see payment feedback.",
           url: link,
         });
@@ -515,7 +515,7 @@ export default function EscrowDetailPage() {
                               if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
                                 try {
                                   await navigator.share({
-                                    title: `BorderSafe escrow ${escrow?.id ?? id}`,
+                                    title: `VendOpay escrow ${escrow?.id ?? id}`,
                                     text: "Use this checkout link to complete payment.",
                                     url: link,
                                   });
